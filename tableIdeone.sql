@@ -9,9 +9,9 @@ CREATE TABLE ideone.ie (
 	codedate VARCHAR(60),
 	codekey VARCHAR(30),
 	size BIGINT,
-	lines BIGINT,
+	codelines BIGINT,
 	language VARCHAR(30),
 	status VARCHAR(30),
   txt LONGTEXT,
-  UNIQUE(fullurl, codedate, codekey, size, lines, language, status)
+  UNIQUE(fullurl, codedate, codekey, size, codelines, language, status)
 );
