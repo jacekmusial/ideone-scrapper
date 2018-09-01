@@ -5,6 +5,8 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gocolly/colly"
+	"github.com/rakanalh/scheduler"
+	"github.com/rakanalh/scheduler/storage"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -41,14 +43,30 @@ func getRecentLinks() (string, string) {
 }
 
 func main() {
-	links, result := getRecentLinks()
-	//jdbc:mariadb://192.168.1.65:3306/ideone
 	dsn := DB_USER + ":" + DB_PASS + "@" + DB_HOST + "/" + DB_NAME + "?charset=utf8"
+	var db *sql.DB
 	db, err := sql.Open("mysql", dsn)
 	checkErr(err)
+	memStorage := storage.NewMemoryStorage()
+	s := scheduler.New(memStorage)
+	fmt.Println("Im good at school three huna worldwide")
+	if _, err := s.RunEvery(15 * time.Second, scrapIdeone, db); err != nil {
+		log.Fatal(err)
+	}
+	s.Start()
+	s.Wait()
+}
+
+func scrapIdeone(db *sql.DB) {
+	links, result := getRecentLinks()
+	//jdbc:mariadb://192.168.1.65:3306/ideone
 
 	split := strings.Split(links, ";")
 	split = split[1:50]
+
+	results := strings.Split(result, ";")
+	results = results[1:50]
+
 	for i, k := range split {
 		fmt.Println("----------")
 		var url = "https://ideone.com/plain/" + k[1:]
@@ -61,21 +79,13 @@ func main() {
 			html, err := ioutil.ReadAll(response.Body)
 			var txt string = string(html)
 			fmt.Println(len(html))
-			//	fullurl VARCHAR(60),
-			//	codedate VARCHAR(60),
-			//	codekey VARCHAR(30),
-			//	size BIGINT,
-			//	codelines BIGINT,
-			//	language VARCHAR(30),
-			//	status VARCHAR(30),
-			//  txt LONGTEXT,
 			stmt, err := db.Prepare("INSERT INTO IE (fullurl, codedate, codekey, size, codelines, language, " +
 				"status, txt) VALUES (?,?,?,?,?,?,?,?)")
 			checkErr(err)
 
 			currentTime := time.Now()
 			res, err := stmt.Exec(url, currentTime.Format("2006-01-02 15:04:05"), k[1:], len(html),
-				strings.Count(txt, "\n"), "language", result[i], txt)
+				strings.Count(txt, "\n"), "language", results[i], txt)
 			if res == nil {
 
 			}
@@ -85,7 +95,6 @@ func main() {
 		fmt.Println(result[i], ", ", url)
 		fmt.Println("____")
 	}
-
 }
 
 func checkErr(err error) {
