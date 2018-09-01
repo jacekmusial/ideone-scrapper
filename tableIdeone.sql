@@ -3,7 +3,7 @@ IF db_id('dbname') IS NULL
 
 GO
 
-CREATE TABLE ideone.ie (
+CREATE TABLE ideone.IE (
   id BIGINT AUTO_INCREMENT NOT NULL primary key,
 	fullurl VARCHAR(60),
 	codedate VARCHAR(60),
