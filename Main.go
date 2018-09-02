@@ -16,10 +16,10 @@ import (
 
 
 const (
-	DB_HOST = "tcp(192.168.1.65:3306)"
+	DB_HOST = "tcp(localhost:3306)"
 	DB_NAME = "ideone"
 	DB_USER = /*"root"*/ "root"
-	DB_PASS = /*""*/ "nanomader#!$!%("
+	DB_PASS = /*""*/ "password"
 )
 
 
@@ -49,15 +49,20 @@ func main() {
 	checkErr(err)
 	memStorage := storage.NewMemoryStorage()
 	s := scheduler.New(memStorage)
+
 	fmt.Println("Im good at school three huna worldwide")
-	if _, err := s.RunEvery(15 * time.Second, scrapIdeone, db); err != nil {
+
+	stmt, err := db.Prepare("INSERT INTO IE (fullurl, codedate, codekey, size, codelines, language, " +
+		"status, txt) VALUES (?,?,?,?,?,?,?,?)")
+
+	if _, err := s.RunEvery(30 * time.Second, scrapIdeone, db, stmt); err != nil {
 		log.Fatal(err)
 	}
 	s.Start()
 	s.Wait()
 }
 
-func scrapIdeone(db *sql.DB) {
+func scrapIdeone(db *sql.DB, stmt *sql.Stmt) {
 	links, result := getRecentLinks()
 	//jdbc:mariadb://192.168.1.65:3306/ideone
 
@@ -79,8 +84,7 @@ func scrapIdeone(db *sql.DB) {
 			html, err := ioutil.ReadAll(response.Body)
 			var txt string = string(html)
 			fmt.Println(len(html))
-			stmt, err := db.Prepare("INSERT INTO IE (fullurl, codedate, codekey, size, codelines, language, " +
-				"status, txt) VALUES (?,?,?,?,?,?,?,?)")
+
 			checkErr(err)
 
 			currentTime := time.Now()
@@ -90,6 +94,7 @@ func scrapIdeone(db *sql.DB) {
 
 			}
 			checkErr(err)
+
 		}
 
 		fmt.Println(result[i], ", ", url)
